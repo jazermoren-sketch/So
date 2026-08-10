@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Player Profile</title>
+
+    <style>
+        body {
+            background: #0b0f19;
+            color: white;
+            font-family: Arial;
+            text-align: center;
+        }
+
+        .box {
+            background: #1c2333;
+            width: 400px;
+            margin: auto;
+            padding: 20px;
+            border-radius: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>👤 PLAYER PROFILE</h1>
+
+<div class="box">
+
+    <p>🆔 ID: {{ user_id }}</p>
+
+    <p>🏆 Wins: {{ data.wins }}</p>
+    <p>💀 Losses: {{ data.losses }}</p>
+    <p>📊 ELO: {{ data.elo }}</p>
+
+</div>
+
+</body>
+</html>
