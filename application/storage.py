@@ -11,14 +11,16 @@ APPLICATIONS_FILE = os.path.join(DATA_FOLDER, "applications.json")
 def _defaults():
     return {
         "reviewer": None, "reviewers": [], "review_channel": None, "result_channel": None,
-        "apply_channel": None, "accepted_role": None, "rejected_role": None,
+        "appeal_channel": None, "apply_channel": None, "accepted_role": None, "rejected_role": None,
         "applications_open": True, "test_questions": 10, "test_pass_percent": 70,
         "test_timer_minutes": 10, "test_attempts": 1, "random_questions": True,
-        "application_logs": True, "application_dm_notifications": True,
-        "prevent_duplicate": True, "allow_reapply": True, "application_status": True,
-        "test_pass_fail": True, "test_timer": True, "test_attempts_enabled": True,
-        "application_requirements": False, "scoring_enabled": False,
-        "score_max": 10, "score_min": 5, "question_scoring": False
+        "application_logs": True, "application_dm_notifications": True, "prevent_duplicate": True,
+        "allow_reapply": True, "application_status": True, "test_pass_fail": True,
+        "test_timer": True, "test_attempts_enabled": True, "application_requirements": False,
+        "scoring_enabled": False, "score_max": 10, "score_min": 5, "question_scoring": False,
+        "reviewer_voting": False, "required_approvals": 1, "appeals_enabled": True,
+        "appeal_cooldown_hours": 168, "appeal_limit": 1, "reapply_cooldown_hours": 72,
+        "auto_close_hours": 48, "auto_roles_by_score": []
     }
 
 
@@ -36,26 +38,19 @@ def setup():
     _create_file(APPLICATIONS_FILE, {})
 
 
-def load_stages():
-    setup(); return _load_json(STAGES_FILE, {})
-def save_stages(data):
-    setup(); _save_json(STAGES_FILE, data)
+def load_stages(): setup(); return _load_json(STAGES_FILE, {})
+def save_stages(data): setup(); _save_json(STAGES_FILE, data)
 def load_config():
     setup(); data = _load_json(CONFIG_FILE, {}); changed = False
     for key, value in _defaults().items():
         if key not in data: data[key] = value; changed = True
     if changed: save_config(data)
     return data
-def save_config(data):
-    setup(); _save_json(CONFIG_FILE, data)
-def load_answers():
-    setup(); return _load_json(ANSWERS_FILE, {})
-def save_answers(data):
-    setup(); _save_json(ANSWERS_FILE, data)
-def load_applications():
-    setup(); return _load_json(APPLICATIONS_FILE, {})
-def save_applications(data):
-    setup(); _save_json(APPLICATIONS_FILE, data)
+def save_config(data): setup(); _save_json(CONFIG_FILE, data)
+def load_answers(): setup(); return _load_json(ANSWERS_FILE, {})
+def save_answers(data): setup(); _save_json(ANSWERS_FILE, data)
+def load_applications(): setup(); return _load_json(APPLICATIONS_FILE, {})
+def save_applications(data): setup(); _save_json(APPLICATIONS_FILE, data)
 def save_application(user_id, data):
     applications = load_applications(); applications[str(user_id)] = data; save_applications(applications)
 def get_application(user_id): return load_applications().get(str(user_id))
