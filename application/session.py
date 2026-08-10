@@ -1,5 +1,6 @@
 import asyncio
 import random
+import time
 import discord
 
 from application.manager import StageManager
@@ -36,6 +37,11 @@ class TestSession:
         if existing_status in ("rejected", "مرفوض", "denied"):
             if not config.get("allow_reapply", True):
                 return await self.interaction.response.send_message("❌ إعادة التقديم غير مفعلة حالياً.", ephemeral=True)
+            last_finished = float(existing.get("finished_at", 0) or 0)
+            cooldown = max(0, int(config.get("reapply_cooldown_hours", 72))) * 3600
+            if cooldown and last_finished and time.time() - last_finished < cooldown:
+                remaining = int((cooldown - (time.time() - last_finished)) / 3600) + 1
+                return await self.interaction.response.send_message(f"⏳ خاصك تستنى تقريباً **{remaining} ساعة** قبل إعادة التقديم.", ephemeral=True)
             self.attempt_number = int(existing.get("attempts", 0)) + 1
             max_attempts = int(config.get("test_attempts", 1))
             if config.get("test_attempts_enabled", True) and self.attempt_number > max_attempts:
@@ -76,7 +82,7 @@ class TestSession:
         if self.timeout_task:
             self.timeout_task.cancel()
         save_application(self.user.id, {"status": "failed" if dm_error else "review", "stage": self.stage, "attempts": self.attempt_number, "questions_count": len(self.questions), "answered": len(self.answers), "passed": None, "timed_out": timed_out})
-        if timed_out and self.answers and self.message_listener:
+        if (timed_out or self.index >= len(self.questions)) and self.message_listener and self.answers:
             await self.message_listener.send_application_to_review_channel(self.user, self)
         text = "❌ تعذر إرسال الرسائل الخاصة. افتح DM وحاول مرة أخرى." if dm_error else ("⏱️ انتهى وقت الاختبار وتم إرسال الإجابات الحالية للمراجعة." if timed_out else "✅ انتهيت من الاختبار. تم إرسال إجاباتك للمراجعة.")
         try:
