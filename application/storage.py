@@ -8,6 +8,20 @@ ANSWERS_FILE = os.path.join(DATA_FOLDER, "answers.json")
 APPLICATIONS_FILE = os.path.join(DATA_FOLDER, "applications.json")
 
 
+def _defaults():
+    return {
+        "reviewer": None, "reviewers": [], "review_channel": None, "result_channel": None,
+        "apply_channel": None, "accepted_role": None, "rejected_role": None,
+        "applications_open": True, "test_questions": 10, "test_pass_percent": 70,
+        "test_timer_minutes": 10, "test_attempts": 1, "random_questions": True,
+        "application_logs": True, "application_dm_notifications": True,
+        "prevent_duplicate": True, "allow_reapply": True, "application_status": True,
+        "test_pass_fail": True, "test_timer": True, "test_attempts_enabled": True,
+        "application_requirements": False, "scoring_enabled": False,
+        "score_max": 10, "score_min": 5, "question_scoring": False
+    }
+
+
 def _create_file(path, default_data):
     os.makedirs(DATA_FOLDER, exist_ok=True)
     if not os.path.exists(path):
@@ -20,18 +34,6 @@ def setup():
     _create_file(CONFIG_FILE, _defaults())
     _create_file(ANSWERS_FILE, {})
     _create_file(APPLICATIONS_FILE, {})
-
-
-def _defaults():
-    return {
-        "reviewer": None, "reviewers": [], "review_channel": None, "apply_channel": None,
-        "accepted_role": None, "rejected_role": None, "applications_open": True,
-        "test_questions": 10, "test_pass_percent": 70, "test_timer_minutes": 10,
-        "test_attempts": 1, "random_questions": True, "application_logs": True,
-        "application_dm_notifications": True, "prevent_duplicate": True, "allow_reapply": True,
-        "application_status": True, "test_pass_fail": True, "test_timer": True, "test_attempts_enabled": True,
-        "application_requirements": False
-    }
 
 
 def load_stages():
