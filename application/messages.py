@@ -6,6 +6,7 @@ from application.storage import (
     save_answers,
     load_config
 )
+from application.review_view import ReviewView
 
 
 class MessageListener:
@@ -62,7 +63,11 @@ class MessageListener:
             )
 
         await channel.send(
-            embed=embed
+            embed=embed,
+            view=ReviewView(
+                message.author.id,
+                session.stage
+            )
         )
 
     def register(self):
@@ -79,13 +84,11 @@ class MessageListener:
                 message.channel,
                 discord.DMChannel
             ):
-            
                 session = active_sessions.get(
                     message.author.id
                 )
 
                 if session:
-
                     session.answers.append(
                         message.content
                     )
@@ -112,15 +115,11 @@ class MessageListener:
                     if session.index >= len(
                         session.questions
                     ):
-
                         config = load_config()
 
                         reviewer = None
 
-                        if config.get(
-                            "reviewer"
-                        ):
-
+                        if config.get("reviewer"):
                             reviewer = self.bot.get_user(
                                 config["reviewer"]
                             )
@@ -132,7 +131,6 @@ class MessageListener:
                         )
 
                         if reviewer:
-
                             embed.add_field(
                                 name="المراجع",
                                 value=reviewer.mention,
@@ -152,9 +150,7 @@ class MessageListener:
                             message.author.id,
                             None
                         )
-                        
                     else:
-
                         await session.ask_question()
 
                     return
