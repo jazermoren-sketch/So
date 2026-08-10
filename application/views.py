@@ -1,6 +1,7 @@
 import discord
 
 from application.session import TestSession
+from application.storage import load_config
 
 
 class StartApplicationView(discord.ui.View):
@@ -19,9 +20,27 @@ class StartApplicationView(discord.ui.View):
         interaction: discord.Interaction,
         button: discord.ui.Button
     ):
+        config = load_config()
+
+        rejected_role_id = config.get("rejected_role")
+
+        if rejected_role_id:
+            rejected_role = (
+                interaction.guild.get_role(rejected_role_id)
+                if interaction.guild
+                else None
+            )
+
+            if rejected_role and rejected_role in interaction.user.roles:
+                return await interaction.response.send_message(
+                    "❌ أنت مرفوض من التقديم للإدارة.",
+                    ephemeral=True
+                )
 
         try:
-            await interaction.user.send("📨 سيتم إرسال الأسئلة في الخاص.")
+            await interaction.user.send(
+                "📨 سيتم إرسال الأسئلة في الخاص."
+            )
         except discord.Forbidden:
             return await interaction.response.send_message(
                 "❌ افتح الرسائل الخاصة (DM) ثم أعد المحاولة.",
