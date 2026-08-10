@@ -1,13 +1,13 @@
+import time
 import discord
-from application.storage import load_answers, save_answers, load_config, save_application
+from application.storage import load_answers, save_answers, load_config, save_application, get_application
 from application.appeals import AppealView
 
 
 class ResultManager:
     @staticmethod
     async def _get_member(interaction, user_id):
-        if interaction.guild is None:
-            return None
+        if interaction.guild is None: return None
         member = interaction.guild.get_member(user_id)
         if member is None:
             try: member = await interaction.guild.fetch_member(user_id)
@@ -33,11 +33,30 @@ class ResultManager:
         return member,None
 
     @staticmethod
+    async def _apply_score_role(interaction, user_id, score):
+        if score is None or not interaction.guild: return None
+        config=load_config(); rules=config.get("auto_roles_by_score", []) or []
+        if not rules: return None
+        member=await ResultManager._get_member(interaction,user_id)
+        if not member: return None
+        selected=None; best=-1
+        for rule in rules:
+            try: minimum=float(rule.get("min",0)); role_id=int(rule.get("role_id"))
+            except (TypeError,ValueError,AttributeError): continue
+            if float(score)>=minimum and minimum>=best:
+                selected=role_id; best=minimum
+        if selected:
+            role=interaction.guild.get_role(selected)
+            if role:
+                try: await member.add_roles(role,reason="Application score role")
+                except (discord.Forbidden,discord.HTTPException): pass
+        return selected
+
+    @staticmethod
     async def _finish_application(user_id,stage,status,reason=None,moderator_id=None,score=None):
         old=load_answers(); answers=old.get(str(user_id),{}).get(stage,[])
-        from application.storage import get_application
         previous=get_application(user_id) or {}
-        save_application(user_id,{**previous,"status":status,"stage":stage,"reason":reason,"finished_by":moderator_id,"answered":len(answers),"score":score})
+        save_application(user_id,{**previous,"status":status,"stage":stage,"reason":reason,"finished_by":moderator_id,"answered":len(answers),"score":score,"finished_at":time.time()})
         if str(user_id) in old:
             old[str(user_id)].pop(stage,None)
             if not old[str(user_id)]: old.pop(str(user_id))
@@ -70,6 +89,7 @@ class ResultManager:
     async def accept(interaction,user_id,stage,reason=None,score=None):
         user=interaction.client.get_user(user_id)
         _,role_error=await ResultManager._set_role(interaction,user_id,"accepted_role","rejected_role")
+        await ResultManager._apply_score_role(interaction,user_id,score)
         description=f"تم قبولك في مرحلة **{stage}**."
         if reason: description+=f"\n\n📝 **ملاحظة الإدارة:**\n{reason}"
         if score is not None: description+=f"\n\n⭐ **التقييم:** {score}"
