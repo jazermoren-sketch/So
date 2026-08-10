@@ -30,9 +30,7 @@ class ApplicationCommands:
         ):
 
             config = load_config()
-
             config["review_channel"] = channel.id
-
             save_config(config)
 
             await interaction.response.send_message(
@@ -55,18 +53,16 @@ class ApplicationCommands:
         ):
 
             if StageManager.create_stage(name):
-
                 await interaction.response.send_message(
                     f"✅ تم إنشاء المرحلة **{name}**",
                     ephemeral=True
                 )
-
             else:
-
                 await interaction.response.send_message(
                     "❌ هذه المرحلة موجودة مسبقًا.",
                     ephemeral=True
                 )
+
         @self.bot.tree.command(
             name="deletestage",
             description="حذف مرحلة"
@@ -78,14 +74,11 @@ class ApplicationCommands:
         ):
 
             if StageManager.delete_stage(name):
-
                 await interaction.response.send_message(
                     f"🗑️ تم حذف المرحلة **{name}**",
                     ephemeral=True
                 )
-
             else:
-
                 await interaction.response.send_message(
                     "❌ المرحلة غير موجودة.",
                     ephemeral=True
@@ -103,7 +96,6 @@ class ApplicationCommands:
             stages = StageManager.list_stages()
 
             if not stages:
-
                 return await interaction.response.send_message(
                     "لا توجد مراحل.",
                     ephemeral=True
@@ -115,7 +107,6 @@ class ApplicationCommands:
             )
 
             for stage, data in stages.items():
-
                 embed.add_field(
                     name=stage,
                     value=f"الأسئلة: {len(data['questions'])}",
@@ -138,13 +129,72 @@ class ApplicationCommands:
         ):
 
             config = load_config()
-
             config["reviewer"] = member.id
-
             save_config(config)
 
             await interaction.response.send_message(
                 f"✅ تم تعيين {member.mention} كمراجع.",
+                ephemeral=True
+            )
+
+        # =========================
+        # ACCEPTED / REJECTED ROLES
+        # =========================
+
+        @self.bot.tree.command(
+            name="setacceptedrole",
+            description="تحديد رتبة المقبولين في التقديم"
+        )
+        @app_commands.checks.has_permissions(administrator=True)
+        async def setacceptedrole(
+            interaction: discord.Interaction,
+            role: discord.Role | None = None
+        ):
+            config = load_config()
+
+            if role is None:
+                config["accepted_role"] = None
+                save_config(config)
+
+                return await interaction.response.send_message(
+                    "🗑️ تم إلغاء رتبة القبول. لن يتم إعطاء رتبة تلقائيًا عند القبول.",
+                    ephemeral=True
+                )
+
+            config["accepted_role"] = role.id
+            save_config(config)
+
+            await interaction.response.send_message(
+                f"✅ تم تحديد {role.mention} كرتبة تلقائية للمقبولين.",
+                ephemeral=True
+            )
+
+        @self.bot.tree.command(
+            name="setrejectedrole",
+            description="تحديد رتبة المرفوضين في التقديم"
+        )
+        @app_commands.checks.has_permissions(administrator=True)
+        async def setrejectedrole(
+            interaction: discord.Interaction,
+            role: discord.Role | None = None
+        ):
+            config = load_config()
+
+            if role is None:
+                config["rejected_role"] = None
+                save_config(config)
+
+                return await interaction.response.send_message(
+                    "🗑️ تم إلغاء رتبة الرفض. لن يتم منع العضو من بدء الاختبار تلقائيًا.",
+                    ephemeral=True
+                )
+
+            config["rejected_role"] = role.id
+            save_config(config)
+
+            await interaction.response.send_message(
+                f"✅ تم تحديد {role.mention} كرتبة للمرفوضين.\n"
+                "أي عضو يحمل هذه الرتبة لن يتمكن من بدء الاختبار.",
                 ephemeral=True
             )
 
@@ -153,6 +203,8 @@ class ApplicationCommands:
         @liststages.error
         @setreviewer.error
         @setreviewchannel.error
+        @setacceptedrole.error
+        @setrejectedrole.error
         async def permission_error(
             interaction: discord.Interaction,
             error
@@ -164,14 +216,11 @@ class ApplicationCommands:
             ):
 
                 if interaction.response.is_done():
-
                     await interaction.followup.send(
                         "❌ هذا الأمر للإدارة فقط.",
                         ephemeral=True
                     )
-
                 else:
-
                     await interaction.response.send_message(
                         "❌ هذا الأمر للإدارة فقط.",
                         ephemeral=True
