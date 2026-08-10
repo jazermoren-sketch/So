@@ -1,4 +1,5 @@
 import discord
+import time
 from discord.ui import Modal, TextInput
 from application.storage import load_config, load_applications, save_application
 
@@ -15,6 +16,13 @@ class AppealModal(Modal, title="📨 تقديم اعتراض"):
             return await interaction.response.send_message("❌ لا يوجد طلب مرفوض يمكن الاعتراض عليه.", ephemeral=True)
         if app.get("appeal_submitted"):
             return await interaction.response.send_message("❌ سبق لك تقديم اعتراض لهذا الطلب.", ephemeral=True)
+        limit = max(1, int(config.get("appeal_limit", 1)))
+        if int(app.get("appeal_count", 0)) >= limit:
+            return await interaction.response.send_message(f"❌ استنفدت الحد الأقصى للاعتراضات ({limit}).", ephemeral=True)
+        submitted_at = float(app.get("appeal_submitted_at", 0) or 0)
+        cooldown = max(0, int(config.get("appeal_cooldown_hours", 168))) * 3600
+        if submitted_at and cooldown and time.time() - submitted_at < cooldown:
+            return await interaction.response.send_message("⏳ لم تنتهِ مدة انتظار الاعتراض التالي.", ephemeral=True)
         channel_id = config.get("appeal_channel")
         channel = interaction.guild.get_channel(channel_id) if interaction.guild and channel_id else None
         if channel is None:
@@ -25,7 +33,7 @@ class AppealModal(Modal, title="📨 تقديم اعتراض"):
         embed.add_field(name="📝 سبب الرفض", value=app.get("reason") or "غير محدد", inline=False)
         embed.add_field(name="📨 الاعتراض", value=str(self.message), inline=False)
         msg = await channel.send(embed=embed)
-        save_application(interaction.user.id, {**app, "appeal_submitted": True, "appeal_message_id": msg.id, "appeal_reason": str(self.message)})
+        save_application(interaction.user.id, {**app, "appeal_submitted": True, "appeal_message_id": msg.id, "appeal_reason": str(self.message), "appeal_submitted_at": time.time(), "appeal_count": int(app.get("appeal_count", 0)) + 1})
         await interaction.response.send_message("✅ تم إرسال اعتراضك للإدارة.", ephemeral=True)
 
 
