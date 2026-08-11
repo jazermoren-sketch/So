@@ -2,6 +2,7 @@ import time
 import discord
 from application.storage import load_answers, save_answers, load_config, save_application, get_application
 from application.appeals import AppealView
+from application.audit import log
 
 class ResultManager:
     @staticmethod
@@ -50,7 +51,11 @@ class ResultManager:
     @staticmethod
     async def _finish_application(interaction,user_id,stage,status,reason=None,moderator_id=None,score=None):
         old=load_answers(interaction.guild.id); answers=old.get(str(user_id),{}).get(stage,[]); previous=get_application(interaction.guild.id,user_id) or {}
-        save_application(interaction.guild.id,user_id,{**previous,"status":status,"stage":stage,"reason":reason,"finished_by":moderator_id,"answered":len(answers),"score":score,"finished_at":time.time()})
+        attempt=previous.get("attempt",1); finished=time.time()
+        snapshot={"attempt":attempt,"status":status,"stage":stage,"reason":reason,"finished_by":moderator_id,"answered":len(answers),"score":score,"finished_at":finished}
+        history=list(previous.get("applications_history",[])); history.append(snapshot)
+        save_application(interaction.guild.id,user_id,{**previous,**snapshot,"applications_history":history[-20:],"locked_by":None,"locked_at":None,"assigned_reviewer":previous.get("assigned_reviewer")})
+        log(interaction.guild.id,user_id,"application_finished",moderator_id,{"status":status,"stage":stage,"score":score,"reason":reason})
         if str(user_id) in old:
             old[str(user_id)].pop(stage,None)
             if not old[str(user_id)]: old.pop(str(user_id))
